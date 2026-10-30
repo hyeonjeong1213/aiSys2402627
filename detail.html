@@ -1,0 +1,623 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EV Mate | 충전소 상세정보</title>
+
+  <link rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, "Noto Sans KR", sans-serif;
+      background: #f4f7f8;
+      color: #1d2939;
+    }
+
+    header {
+      height: 66px;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 max(calc((100% - 1170px) / 2), 24px);
+      border-bottom: 1px solid #edf0f2;
+    }
+
+    .logo {
+      color: #07834e;
+      font-size: 23px;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    nav { display: flex; gap: 24px; }
+
+    nav a {
+      color: #667085;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    nav a:hover { color: #07834e; }
+
+    .hero {
+      background: linear-gradient(110deg, #103a3b, #087653);
+      color: white;
+      padding: 40px 24px;
+    }
+
+    .hero-inner, main {
+      max-width: 1170px;
+      margin: auto;
+    }
+
+    .hero h1 { font-size: 30px; margin: 0 0 10px; }
+    .hero p { color: #d1eee4; margin: 0; }
+
+    main { padding: 30px 24px 60px; }
+
+    .back {
+      display: inline-block;
+      margin-bottom: 20px;
+      color: #07834e;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid #e8edf0;
+      border-radius: 16px;
+      padding: 25px;
+      margin-bottom: 20px;
+    }
+
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+    }
+
+    .name {
+      font-size: 25px;
+      font-weight: 800;
+      margin: 0 0 12px;
+    }
+
+    .address {
+      color: #758394;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 9px;
+      padding: 12px 17px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .favorite {
+      background: #e8f7f0;
+      color: #07834e;
+      white-space: nowrap;
+    }
+
+    .favorite.saved {
+      background: #fff0ef;
+      color: #d04444;
+    }
+
+    .section-title {
+      font-size: 19px;
+      margin: 0 0 20px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+    }
+
+    .info-item {
+      background: #f7f9fa;
+      border-radius: 11px;
+      padding: 17px;
+    }
+
+    .info-label {
+      color: #8793a1;
+      font-size: 13px;
+      margin-bottom: 9px;
+    }
+
+    .info-value {
+      font-weight: 700;
+      font-size: 15px;
+      word-break: break-word;
+    }
+
+    .status {
+      display: inline-block;
+      border-radius: 20px;
+      padding: 7px 12px;
+      background: #e8f7f0;
+      color: #07834e;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .status.busy {
+      background: #fff3df;
+      color: #a56a0b;
+    }
+
+    .status.off {
+      background: #fff0ef;
+      color: #c03939;
+    }
+
+    #map {
+      height: 330px;
+      width: 100%;
+      border-radius: 12px;
+      z-index: 1;
+    }
+
+    .alternative-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+
+    .alternative {
+      border: 1px solid #e8edf0;
+      border-radius: 12px;
+      padding: 18px;
+    }
+
+    .alternative h3 {
+      font-size: 16px;
+      margin: 0 0 10px;
+    }
+
+    .alternative p {
+      font-size: 13px;
+      color: #82909f;
+      line-height: 1.6;
+      margin: 5px 0;
+    }
+
+    .alternative .distance {
+      color: #07834e;
+      font-weight: 700;
+    }
+
+    .empty {
+      padding: 30px;
+      text-align: center;
+      background: #f7f9fa;
+      color: #82909f;
+      border-radius: 12px;
+      grid-column: 1 / -1;
+      line-height: 1.7;
+    }
+
+    .loading {
+      padding: 30px;
+      text-align: center;
+      color: #82909f;
+    }
+
+    .error {
+      background: #fff0ef;
+      color: #c03939;
+      padding: 20px;
+      border-radius: 12px;
+      line-height: 1.7;
+    }
+
+    footer {
+      text-align: center;
+      padding: 25px;
+      color: #98a2b3;
+      font-size: 13px;
+    }
+
+    @media(max-width: 750px) {
+      header { padding: 0 16px; }
+      nav { gap: 10px; }
+      nav a { font-size: 12px; }
+      .info-grid { grid-template-columns: 1fr 1fr; }
+      .alternative-list { grid-template-columns: 1fr; }
+      .top { flex-direction: column; }
+      .name { font-size: 21px; }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <a class="logo" href="index.html">⚡ EV Mate</a>
+
+  <nav>
+    <a href="index.html">충전소 찾기</a>
+    <a href="analysis.html">충전소 분석</a>
+    <a href="favorites.html">즐겨찾기</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <h1>충전소 상세정보</h1>
+    <p>충전소 운영 정보와 주변 대체 충전소를 확인하세요.</p>
+  </div>
+</section>
+
+<main>
+  <a class="back" href="index.html">← 충전소 찾기로 돌아가기</a>
+
+  <div id="detailArea">
+    <div class="loading">충전소 정보를 불러오는 중입니다.</div>
+  </div>
+
+  <section class="card">
+    <h2 class="section-title">📍 충전소 위치</h2>
+    <div id="map"></div>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">🔎 주변 대체 충전소</h2>
+    <p style="color:#82909f;font-size:13px;line-height:1.7">
+      선택한 충전소 주변에서 충전 가능한 충전기를 찾아 보여줍니다.
+      조회된 지역 데이터 범위 안에서 추천합니다.
+    </p>
+    <div id="alternativeList" class="alternative-list">
+      <div class="loading">주변 충전소를 확인하고 있습니다.</div>
+    </div>
+  </section>
+</main>
+
+<footer>© 2026 EV Mate. Smart EV Charging Platform.</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  const API_URL =
+    "https://script.google.com/macros/s/AKfycbxRP1oyRDRPs_3dq8WtpOS3I9DaBeZ49gldxT_noYpUn8yBSyuUAtDds1uXomA36TCZ/exec";
+
+  const FAVORITE_KEY = "evMateFavorites";
+  const SELECTED_KEY = "evMateSelectedStation";
+
+  let station = null;
+  let map = null;
+
+  function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[char]);
+  }
+
+  function getFavorites() {
+    try {
+      return JSON.parse(localStorage.getItem(FAVORITE_KEY) || "[]");
+    } catch {
+      return [];
+    }
+  }
+
+  function isFavorite(item) {
+    return getFavorites().some(f =>
+      String(f.statId) === String(item.statId) &&
+      String(f.chgerId) === String(item.chgerId)
+    );
+  }
+
+  function toggleFavorite() {
+    let favorites = getFavorites();
+
+    if (isFavorite(station)) {
+      favorites = favorites.filter(f =>
+        !(String(f.statId) === String(station.statId) &&
+          String(f.chgerId) === String(station.chgerId))
+      );
+    } else {
+      favorites.push(station);
+    }
+
+    localStorage.setItem(FAVORITE_KEY, JSON.stringify(favorites));
+    renderFavoriteButton();
+  }
+
+  function renderFavoriteButton() {
+    const button = document.getElementById("favoriteButton");
+    if (!button) return;
+
+    const saved = isFavorite(station);
+
+    button.textContent = saved ? "♥ 즐겨찾기 해제" : "♡ 즐겨찾기 추가";
+    button.classList.toggle("saved", saved);
+  }
+
+  function getStatusName(item) {
+    if (item.statusName) return item.statusName;
+
+    const names = {
+      "1": "통신 이상",
+      "2": "충전 가능",
+      "3": "충전 중",
+      "4": "운영 중지",
+      "5": "점검 중",
+      "9": "상태 미확인"
+    };
+
+    return names[String(item.stat)] || "상태 미확인";
+  }
+
+  function statusClass(item) {
+    const status = String(item.stat);
+
+    if (status === "2") return "";
+    if (status === "3") return "busy";
+    return "off";
+  }
+
+  function renderDetail() {
+    const status = getStatusName(station);
+
+    document.getElementById("detailArea").innerHTML = `
+      <section class="card">
+        <div class="top">
+          <div>
+            <h2 class="name">${escapeHTML(station.statNm || "충전소")}</h2>
+            <div class="address">
+              📍 ${escapeHTML(station.addr || "주소 정보 없음")}
+            </div>
+          </div>
+
+          <button id="favoriteButton" class="favorite"
+            onclick="toggleFavorite()">
+            ♡ 즐겨찾기 추가
+          </button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="section-title">⚡ 충전기 정보</h2>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">현재 충전 상태</div>
+            <div class="info-value">
+              <span class="status ${statusClass(station)}">
+                ${escapeHTML(status)}
+              </span>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">충전기 번호</div>
+            <div class="info-value">${escapeHTML(station.chgerId || "-")}</div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">충전 방식</div>
+            <div class="info-value">
+              ${escapeHTML(station.chgerTypeName || station.chgerType || "-")}
+            </div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">충전 출력</div>
+            <div class="info-value">
+              ${escapeHTML(station.output || "-")} kW
+            </div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">운영 기관</div>
+            <div class="info-value">${escapeHTML(station.busiNm || "-")}</div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">문의 전화</div>
+            <div class="info-value">${escapeHTML(station.busiCall || "-")}</div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">이용 시간</div>
+            <div class="info-value">${escapeHTML(station.useTime || "-")}</div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">무료 주차</div>
+            <div class="info-value">
+              ${station.parkingFree === "Y" ? "가능" :
+                station.parkingFree === "N" ? "불가능" : "정보 없음"}
+            </div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">이용 제한</div>
+            <div class="info-value">
+              ${station.limitYn === "Y" ? "제한 있음" :
+                station.limitYn === "N" ? "제한 없음" : "정보 없음"}
+            </div>
+          </div>
+        </div>
+      </section>
+    `;
+
+    renderFavoriteButton();
+  }
+
+  function distanceKm(lat1, lng1, lat2, lng2) {
+    const rad = value => value * Math.PI / 180;
+    const dLat = rad(lat2 - lat1);
+    const dLng = rad(lng2 - lng1);
+
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(rad(lat1)) * Math.cos(rad(lat2)) *
+      Math.sin(dLng / 2) ** 2;
+
+    return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  function renderMap() {
+    const lat = Number(station.lat);
+    const lng = Number(station.lng);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) ||
+        lat === 0 || lng === 0) {
+      document.getElementById("map").innerHTML =
+        "위치 정보가 제공되지 않는 충전소입니다.";
+      return;
+    }
+
+    map = L.map("map").setView([lat, lng], 16);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
+
+    L.marker([lat, lng])
+      .addTo(map)
+      .bindPopup(escapeHTML(station.statNm || "선택한 충전소"))
+      .openPopup();
+  }
+
+  async function loadAlternatives() {
+    const container = document.getElementById("alternativeList");
+
+    if (!station.zcode) {
+      container.innerHTML =
+        '<div class="empty">지역 정보가 없어 대체 충전소를 조회할 수 없습니다.</div>';
+      return;
+    }
+
+    try {
+      const url = API_URL +
+        "?zcode=" + encodeURIComponent(station.zcode) +
+        "&pageNo=1&numOfRows=100";
+
+      const response = await fetch(url);
+
+      if (!response.ok) throw new Error("API 요청 실패");
+
+      const data = await response.json();
+
+      if (!data.success) throw new Error(data.message || "조회 실패");
+
+      const lat = Number(station.lat);
+      const lng = Number(station.lng);
+
+      if (!Number.isFinite(lat) || !Number.isFinite(lng) ||
+          lat === 0 || lng === 0) {
+        throw new Error("선택한 충전소의 좌표가 없습니다.");
+      }
+
+      const alternatives = (data.stations || [])
+        .filter(item =>
+          String(item.statId) !== String(station.statId) &&
+          String(item.stat) === "2" &&
+          Number.isFinite(Number(item.lat)) &&
+          Number.isFinite(Number(item.lng)) &&
+          Number(item.lat) !== 0 &&
+          Number(item.lng) !== 0
+        )
+        .map(item => ({
+          ...item,
+          distance: distanceKm(
+            lat, lng, Number(item.lat), Number(item.lng)
+          )
+        }))
+        .filter(item => item.distance <= 10)
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 4);
+
+      if (alternatives.length === 0) {
+        container.innerHTML = `
+          <div class="empty">
+            현재 조회한 지역 데이터에서 10km 이내의
+            충전 가능한 대체 충전소를 찾지 못했습니다.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = alternatives.map(item => `
+        <article class="alternative">
+          <h3>${escapeHTML(item.statNm || "충전소")}</h3>
+          <p>${escapeHTML(item.addr || "주소 정보 없음")}</p>
+          <p>충전 방식: ${escapeHTML(item.chgerTypeName || item.chgerType || "-")}</p>
+          <p>출력: ${escapeHTML(item.output || "-")} kW</p>
+          <p class="distance">
+            현재 충전소 기준 약 ${item.distance.toFixed(2)} km
+          </p>
+          <span class="status">충전 가능</span>
+        </article>
+      `).join("");
+
+    } catch (error) {
+      console.error(error);
+      container.innerHTML = `
+        <div class="empty">
+          대체 충전소 정보를 불러오지 못했습니다.<br>
+          ${escapeHTML(error.message)}
+        </div>
+      `;
+    }
+  }
+
+  function init() {
+    try {
+      const saved = localStorage.getItem(SELECTED_KEY);
+
+      if (!saved) {
+        throw new Error("선택한 충전소 정보가 없습니다.");
+      }
+
+      station = JSON.parse(saved);
+
+      if (!station || !station.statId || !station.chgerId) {
+        throw new Error("충전소 정보가 올바르지 않습니다.");
+      }
+
+      renderDetail();
+      renderMap();
+      loadAlternatives();
+
+    } catch (error) {
+      document.getElementById("detailArea").innerHTML = `
+        <div class="error">
+          ${escapeHTML(error.message)}<br>
+          메인 페이지에서 충전소를 다시 선택해 주세요.
+          <br><br>
+          <a href="index.html">충전소 찾기로 이동</a>
+        </div>
+      `;
+      document.getElementById("alternativeList").innerHTML = "";
+    }
+  }
+
+  init();
+</script>
+
+</body>
+</html>
