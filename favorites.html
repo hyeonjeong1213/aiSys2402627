@@ -1,0 +1,397 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EV Mate | 즐겨찾기</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, "Noto Sans KR", sans-serif;
+      background: #f4f7f8;
+      color: #1d2939;
+    }
+
+    header {
+      height: 66px;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 max(calc((100% - 1170px) / 2), 24px);
+      border-bottom: 1px solid #edf0f2;
+    }
+
+    .logo {
+      color: #07834e;
+      font-size: 23px;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    nav { display: flex; gap: 28px; }
+
+    nav a {
+      color: #667085;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    nav a.active, nav a:hover { color: #07834e; }
+
+    .hero {
+      background: linear-gradient(110deg, #103a3b, #087653);
+      color: white;
+      padding: 48px 24px;
+    }
+
+    .hero-inner, main {
+      max-width: 1170px;
+      margin: auto;
+    }
+
+    .hero h1 { font-size: 32px; margin: 0 0 12px; }
+    .hero p { color: #d1eee4; margin: 0; }
+
+    main { padding: 32px 24px 60px; }
+
+    .top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      margin-bottom: 22px;
+    }
+
+    .count {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .count span { color: #0b9b65; }
+
+    button {
+      border: none;
+      border-radius: 9px;
+      padding: 11px 17px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .clear-btn {
+      background: #fff0ef;
+      color: #d04444;
+    }
+
+    .clear-btn:hover { background: #ffe1df; }
+
+    .station-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+    }
+
+    .station-card {
+      background: white;
+      border: 1px solid #e8edf0;
+      border-radius: 15px;
+      padding: 22px;
+      transition: transform .2s, box-shadow .2s;
+    }
+
+    .station-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0,0,0,.06);
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 17px;
+    }
+
+    .charger-badge {
+      background: #e8f7f0;
+      color: #07834e;
+      padding: 6px 11px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .remove-btn {
+      background: transparent;
+      color: #d04444;
+      padding: 5px 8px;
+    }
+
+    .remove-btn:hover { background: #fff0ef; }
+
+    .station-name {
+      font-size: 19px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .info {
+      font-size: 14px;
+      color: #7a8998;
+      line-height: 1.8;
+      word-break: keep-all;
+    }
+
+    .status-line {
+      margin-top: 16px;
+      padding-top: 15px;
+      border-top: 1px solid #edf0f2;
+      color: #07834e;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .empty {
+      background: white;
+      border: 1px solid #e8edf0;
+      border-radius: 16px;
+      padding: 75px 20px;
+      text-align: center;
+      grid-column: 1 / -1;
+    }
+
+    .empty-icon { font-size: 48px; margin-bottom: 18px; }
+    .empty h2 { font-size: 21px; margin: 0 0 12px; }
+    .empty p { color: #8995a3; font-size: 14px; }
+
+    .find-btn {
+      display: inline-block;
+      margin-top: 15px;
+      background: #13a36f;
+      color: white;
+      text-decoration: none;
+      padding: 13px 22px;
+      border-radius: 9px;
+      font-weight: 700;
+    }
+
+    .find-btn:hover { background: #07834e; }
+
+    footer {
+      text-align: center;
+      padding: 25px;
+      color: #98a2b3;
+      font-size: 13px;
+    }
+
+    @media(max-width: 750px) {
+      header { padding: 0 16px; }
+      nav { gap: 12px; }
+      nav a { font-size: 12px; }
+      .hero h1 { font-size: 25px; }
+      .station-list { grid-template-columns: 1fr; }
+      .top-row { align-items: flex-start; }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <a class="logo" href="index.html">⚡ EV Mate</a>
+
+  <nav>
+    <a href="index.html">충전소 찾기</a>
+    <a href="analysis.html">충전소 분석</a>
+    <a href="favorites.html" class="active">즐겨찾기</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <h1>나의 즐겨찾기</h1>
+    <p>자주 이용하는 충전소를 한곳에서 관리하세요.</p>
+  </div>
+</section>
+
+<main>
+
+  <div class="top-row">
+    <div class="count">
+      저장된 충전소 <span id="favoriteCount">0</span>개
+    </div>
+
+    <button class="clear-btn" id="clearButton">
+      전체 삭제
+    </button>
+  </div>
+
+  <section class="station-list" id="stationList">
+    <div class="empty">
+      <div class="empty-icon">⭐</div>
+      <h2>즐겨찾기를 불러오는 중입니다.</h2>
+    </div>
+  </section>
+
+</main>
+
+<footer>© 2026 EV Mate. Smart EV Charging Platform.</footer>
+
+<script>
+  const STORAGE_KEY = "evMateFavorites";
+
+  function getFavorites() {
+    try {
+      return JSON.parse(
+        localStorage.getItem(STORAGE_KEY) || "[]"
+      );
+    } catch (error) {
+      console.error("즐겨찾기 데이터 오류:", error);
+      return [];
+    }
+  }
+
+  function saveFavorites(favorites) {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(favorites)
+    );
+  }
+
+  function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[char]);
+  }
+
+  function getStatusName(station) {
+    if (station.statusName) return station.statusName;
+
+    const names = {
+      "1": "통신 이상",
+      "2": "충전 가능",
+      "3": "충전 중",
+      "4": "운영 중지",
+      "5": "점검 중",
+      "9": "상태 미확인"
+    };
+
+    return names[String(station.stat)] || "상태 미확인";
+  }
+
+  function renderFavorites() {
+    const favorites = getFavorites();
+
+    document.getElementById("favoriteCount").textContent =
+      favorites.length;
+
+    const list = document.getElementById("stationList");
+
+    if (favorites.length === 0) {
+      list.innerHTML = `
+        <div class="empty">
+          <div class="empty-icon">⭐</div>
+          <h2>아직 저장된 충전소가 없어요.</h2>
+          <p>마음에 드는 충전소를 즐겨찾기에 추가해 보세요!</p>
+          <a href="index.html" class="find-btn">
+            충전소 찾으러 가기
+          </a>
+        </div>
+      `;
+      return;
+    }
+
+    list.innerHTML = favorites.map((station, index) => `
+      <article class="station-card">
+
+        <div class="card-top">
+          <span class="charger-badge">
+            ⭐ 즐겨찾기
+          </span>
+
+          <button
+            class="remove-btn"
+            data-index="${index}">
+            삭제
+          </button>
+        </div>
+
+        <div class="station-name">
+          ${escapeHTML(station.statNm || "이름 없는 충전소")}
+        </div>
+
+        <div class="info">
+          📍 ${escapeHTML(station.addr || "주소 정보 없음")}<br>
+          🔌 충전기 번호: ${escapeHTML(station.chgerId || "-")}<br>
+          ⚡ 충전 방식: ${escapeHTML(station.chgerTypeName || station.chgerType || "-")}<br>
+          ⚡ 출력: ${escapeHTML(station.output || "-")} kW<br>
+          🕒 이용 시간: ${escapeHTML(station.useTime || "정보 없음")}<br>
+          🚗 무료 주차: ${station.parkingFree === "Y" ? "가능" : "정보 없음"}
+        </div>
+
+        <div class="status-line">
+          현재 상태: ${escapeHTML(getStatusName(station))}
+        </div>
+
+      </article>
+    `).join("");
+  }
+
+  document.getElementById("stationList")
+    .addEventListener("click", function(event) {
+
+      const button = event.target.closest("[data-index]");
+
+      if (!button) return;
+
+      const index = Number(button.dataset.index);
+      const favorites = getFavorites();
+
+      if (!Number.isInteger(index) ||
+          index < 0 ||
+          index >= favorites.length) return;
+
+      favorites.splice(index, 1);
+      saveFavorites(favorites);
+      renderFavorites();
+    });
+
+  document.getElementById("clearButton")
+    .addEventListener("click", function() {
+
+      const favorites = getFavorites();
+
+      if (favorites.length === 0) {
+        alert("삭제할 즐겨찾기가 없습니다.");
+        return;
+      }
+
+      if (!confirm("저장된 즐겨찾기를 모두 삭제할까요?")) {
+        return;
+      }
+
+      saveFavorites([]);
+      renderFavorites();
+    });
+
+  // 다른 페이지에서 즐겨찾기가 변경되면 화면 갱신
+  window.addEventListener("storage", function(event) {
+    if (event.key === STORAGE_KEY) {
+      renderFavorites();
+    }
+  });
+
+  renderFavorites();
+</script>
+
+</body>
+</html>
