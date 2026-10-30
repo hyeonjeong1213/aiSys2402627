@@ -1,0 +1,1681 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EV Mate | 전기차 충전소 스마트 추천</title>
+
+  <!-- 지도 라이브러리 -->
+  <link rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap');
+
+    :root {
+      --green: #16a36a;
+      --green-dark: #087c4d;
+      --green-light: #e9f8f1;
+      --navy: #172b3a;
+      --text: #263746;
+      --muted: #84919b;
+      --line: #e8edf0;
+      --bg: #f6f8f9;
+      --white: #ffffff;
+      --red: #e35c5c;
+      --orange: #e99b35;
+      --blue: #4285db;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Pretendard', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    button, input, select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    header {
+      height: 72px;
+      background: white;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 max(calc((100% - 1240px) / 2), 24px);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 23px;
+      font-weight: 800;
+      color: var(--green-dark);
+      text-decoration: none;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--green);
+      color: white;
+      border-radius: 11px;
+      display: grid;
+      place-items: center;
+      font-size: 21px;
+    }
+
+    nav {
+      display: flex;
+      gap: 28px;
+      align-items: center;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: #64727c;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    nav a.active {
+      color: var(--green-dark);
+    }
+
+    .hero {
+      background: linear-gradient(120deg, #102f35, #176c55);
+      color: white;
+      padding: 48px 24px 62px;
+    }
+
+    .hero-inner {
+      max-width: 1240px;
+      margin: auto;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      padding: 7px 12px;
+      border: 1px solid #ffffff40;
+      border-radius: 30px;
+      color: #c6f6df;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(27px, 4vw, 39px);
+      line-height: 1.35;
+      letter-spacing: -1.4px;
+    }
+
+    .hero p {
+      color: #d0e7dd;
+      font-size: 15px;
+      margin: 13px 0 0;
+    }
+
+    .search-panel {
+      background: white;
+      border-radius: 16px;
+      padding: 22px;
+      margin-top: 30px;
+      color: var(--text);
+      box-shadow: 0 12px 35px #001d1825;
+    }
+
+    .search-row {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr auto auto;
+      gap: 12px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: #64727c;
+      margin-bottom: 8px;
+    }
+
+    .field select,
+    .field input {
+      width: 100%;
+      height: 46px;
+      border: 1px solid #dce4e7;
+      border-radius: 9px;
+      padding: 0 12px;
+      background: white;
+      outline: none;
+      color: var(--text);
+    }
+
+    .field select:focus,
+    .field input:focus {
+      border-color: var(--green);
+    }
+
+    .search-btn,
+    .location-btn {
+      height: 46px;
+      align-self: end;
+      border: 0;
+      border-radius: 9px;
+      padding: 0 20px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .search-btn {
+      background: var(--green);
+      color: white;
+    }
+
+    .search-btn:hover {
+      background: var(--green-dark);
+    }
+
+    .location-btn {
+      background: var(--green-light);
+      color: var(--green-dark);
+    }
+
+    main {
+      max-width: 1240px;
+      margin: 30px auto 70px;
+      padding: 0 24px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .stat-card {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 19px;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .stat-value {
+      font-size: 25px;
+      font-weight: 800;
+      margin-top: 9px;
+      color: var(--navy);
+    }
+
+    .stat-value.green {
+      color: var(--green);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 32px 0 16px;
+    }
+
+    .section-title h2 {
+      font-size: 20px;
+      margin: 0;
+      letter-spacing: -.5px;
+    }
+
+    .section-title span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .recommendations {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+    }
+
+    .recommend-card {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 18px;
+      cursor: pointer;
+      transition: .2s;
+    }
+
+    .recommend-card:hover {
+      border-color: var(--green);
+      transform: translateY(-2px);
+    }
+
+    .recommend-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 13px;
+    }
+
+    .recommend-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--green-dark);
+      background: var(--green-light);
+      padding: 6px 9px;
+      border-radius: 20px;
+    }
+
+    .score {
+      color: var(--green-dark);
+      font-size: 21px;
+      font-weight: 800;
+    }
+
+    .recommend-card h3 {
+      font-size: 16px;
+      margin: 0 0 8px;
+    }
+
+    .recommend-card p {
+      font-size: 12px;
+      color: var(--muted);
+      margin: 5px 0;
+      line-height: 1.5;
+    }
+
+    .reason {
+      color: var(--green-dark) !important;
+      font-weight: 600;
+      margin-top: 12px !important;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .panel {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    #map {
+      width: 100%;
+      height: 560px;
+      z-index: 1;
+    }
+
+    .map-caption {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .list-panel {
+      padding: 18px;
+    }
+
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 15px 0;
+    }
+
+    .filter-chip {
+      border: 1px solid #dfe6e9;
+      background: white;
+      border-radius: 30px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: #66737d;
+      font-weight: 600;
+    }
+
+    .filter-chip.active {
+      background: var(--green-light);
+      border-color: #b5e7cf;
+      color: var(--green-dark);
+    }
+
+    .extra-filters {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+      margin-bottom: 14px;
+    }
+
+    .extra-filters select {
+      width: 100%;
+      height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0 9px;
+      color: #64727c;
+      background: white;
+      font-size: 12px;
+    }
+
+    .list-summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0 14px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .station-list {
+      max-height: 405px;
+      overflow-y: auto;
+    }
+
+    .station-card {
+      border-top: 1px solid var(--line);
+      padding: 15px 4px;
+      cursor: pointer;
+    }
+
+    .station-card:hover {
+      background: #f9fcfa;
+    }
+
+    .station-heading {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .station-heading h3 {
+      font-size: 14px;
+      margin: 0 0 7px;
+      line-height: 1.4;
+    }
+
+    .station-address {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .status {
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+      border-radius: 20px;
+      padding: 6px 9px;
+    }
+
+    .status.available {
+      color: #087c4d;
+      background: #e6f7ee;
+    }
+
+    .status.charging {
+      color: #3474c4;
+      background: #eaf2ff;
+    }
+
+    .status.unavailable {
+      color: #c15a43;
+      background: #fff0e9;
+    }
+
+    .station-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 10px;
+    }
+
+    .meta-tag {
+      background: #f1f4f5;
+      color: #65737c;
+      padding: 5px 7px;
+      border-radius: 5px;
+      font-size: 10px;
+    }
+
+    .favorite-btn {
+      border: 0;
+      background: transparent;
+      color: #b8c1c5;
+      font-size: 20px;
+      padding: 0 3px;
+    }
+
+    .favorite-btn.saved {
+      color: #edaa42;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .pagination button {
+      border: 1px solid var(--line);
+      background: white;
+      border-radius: 7px;
+      padding: 8px 13px;
+      color: var(--text);
+    }
+
+    .pagination button:disabled {
+      opacity: .35;
+      cursor: not-allowed;
+    }
+
+    .pagination span {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .notice {
+      margin-top: 20px;
+      padding: 14px;
+      background: #eef7f3;
+      border-radius: 9px;
+      color: #537568;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 45px 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 45px 10px;
+      color: var(--green-dark);
+      font-size: 14px;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #10202a99;
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      width: 100%;
+      max-width: 500px;
+      max-height: 85vh;
+      overflow-y: auto;
+      border-radius: 16px;
+      padding: 24px;
+      position: relative;
+    }
+
+    .modal-close {
+      position: absolute;
+      right: 17px;
+      top: 15px;
+      border: 0;
+      background: #f0f3f4;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      font-size: 18px;
+    }
+
+    .modal-content h2 {
+      font-size: 20px;
+      padding-right: 35px;
+      margin: 0 0 8px;
+    }
+
+    .modal-address {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      border-top: 1px solid var(--line);
+      padding: 13px 0;
+      font-size: 13px;
+    }
+
+    .detail-row span:first-child {
+      color: var(--muted);
+    }
+
+    .detail-row strong {
+      text-align: right;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 9px;
+      margin-top: 20px;
+    }
+
+    .modal-actions button {
+      flex: 1;
+      height: 43px;
+      border-radius: 8px;
+      border: 0;
+      font-weight: 700;
+    }
+
+    .modal-favorite {
+      background: var(--green-light);
+      color: var(--green-dark);
+    }
+
+    .modal-map {
+      background: var(--green);
+      color: white;
+    }
+
+    footer {
+      background: #172b3a;
+      color: #c5d1d5;
+      text-align: center;
+      padding: 27px 20px;
+      font-size: 12px;
+      line-height: 1.8;
+    }
+
+    @media (max-width: 850px) {
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+
+      #map {
+        height: 360px;
+      }
+
+      .search-row {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .recommendations {
+        grid-template-columns: 1fr;
+      }
+
+      .stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 550px) {
+      header {
+        padding: 0 16px;
+      }
+
+      nav {
+        gap: 12px;
+      }
+
+      nav a {
+        font-size: 11px;
+      }
+
+      .logo {
+        font-size: 19px;
+      }
+
+      .hero {
+        padding: 35px 17px 45px;
+      }
+
+      .search-row {
+        grid-template-columns: 1fr;
+      }
+
+      .search-btn,
+      .location-btn {
+        width: 100%;
+      }
+
+      main {
+        padding: 0 15px;
+      }
+
+      .stats {
+        gap: 9px;
+      }
+
+      .stat-card {
+        padding: 14px;
+      }
+
+      .stat-value {
+        font-size: 21px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <a href="index.html" class="logo">
+    <span class="logo-icon">⚡</span>
+    EV Mate
+  </a>
+
+  <nav>
+    <a href="index.html" class="active">충전소 찾기</a>
+    <a href="analysis.html">충전소 분석</a>
+    <a href="favorites.html">즐겨찾기</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <span class="hero-tag">SMART EV CHARGING PLATFORM</span>
+    <h1>내 주변 가장 좋은 충전소,<br>EV Mate가 찾아드릴게요.</h1>
+    <p>충전 상태부터 거리, 충전기 출력까지 고려한 스마트 충전소 추천 서비스</p>
+
+    <div class="search-panel">
+      <div class="search-row">
+        <div class="field">
+          <label for="regionSelect">지역 선택</label>
+          <select id="regionSelect">
+            <option value="11">서울특별시</option>
+            <option value="26">부산광역시</option>
+            <option value="27">대구광역시</option>
+            <option value="28">인천광역시</option>
+            <option value="29">광주광역시</option>
+            <option value="30">대전광역시</option>
+            <option value="31">울산광역시</option>
+            <option value="36">세종특별자치시</option>
+            <option value="41">경기도</option>
+            <option value="42">강원특별자치도</option>
+            <option value="43">충청북도</option>
+            <option value="44">충청남도</option>
+            <option value="45">전북특별자치도</option>
+            <option value="46">전라남도</option>
+            <option value="47">경상북도</option>
+            <option value="48">경상남도</option>
+            <option value="50">제주특별자치도</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="searchInput">충전소 검색</label>
+          <input id="searchInput" type="text"
+            placeholder="충전소명 또는 주소를 입력하세요">
+        </div>
+
+        <button class="search-btn" id="searchBtn">검색하기</button>
+        <button class="location-btn" id="locationBtn">현재 위치 사용</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main>
+
+  <section class="stats">
+    <div class="stat-card">
+      <div class="stat-label">검색된 충전기</div>
+      <div class="stat-value" id="totalCount">-</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">현재 조회 데이터 중 충전 가능</div>
+      <div class="stat-value green" id="availableCount">-</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">충전 중</div>
+      <div class="stat-value" id="chargingCount">-</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">무료 주차 충전기</div>
+      <div class="stat-value" id="freeCount">-</div>
+    </div>
+  </section>
+
+  <div class="section-title">
+    <h2>✨ EV Mate 추천 충전소</h2>
+    <span>균형형 추천 점수 기준 TOP 3</span>
+  </div>
+
+  <section class="recommendations" id="recommendations">
+    <div class="loading">추천 충전소를 불러오는 중입니다.</div>
+  </section>
+
+  <div class="section-title">
+    <h2>충전소 지도 및 목록</h2>
+    <span id="regionLabel">서울특별시</span>
+  </div>
+
+  <section class="content-grid">
+
+    <div class="panel">
+      <div class="map-caption">📍 충전소 위치 지도</div>
+      <div id="map"></div>
+    </div>
+
+    <div class="panel list-panel">
+      <h3 style="margin:0;font-size:17px;">충전소 목록</h3>
+
+      <div class="filter-row">
+        <button class="filter-chip active" data-status="all">전체</button>
+        <button class="filter-chip" data-status="2">충전 가능</button>
+        <button class="filter-chip" data-status="3">충전 중</button>
+        <button class="filter-chip" data-status="other">점검·기타</button>
+      </div>
+
+      <div class="extra-filters">
+        <select id="typeFilter">
+          <option value="all">전체 충전기 종류</option>
+          <option value="01">DC차데모</option>
+          <option value="02">AC완속</option>
+          <option value="03">DC차데모+AC3상</option>
+          <option value="04">DC콤보</option>
+          <option value="05">DC차데모+DC콤보</option>
+          <option value="06">DC차데모+AC3상+DC콤보</option>
+          <option value="07">AC3상</option>
+          <option value="08">DC콤보(완속)</option>
+          <option value="09">NACS</option>
+          <option value="10">AC단독</option>
+        </select>
+
+        <select id="parkingFilter">
+          <option value="all">주차 조건 전체</option>
+          <option value="Y">무료 주차</option>
+          <option value="N">유료 주차</option>
+        </select>
+      </div>
+
+      <div class="list-summary">
+        <span id="listCount">데이터를 불러오는 중...</span>
+        <span>최신 API 데이터</span>
+      </div>
+
+      <div class="station-list" id="stationList">
+        <div class="loading">충전소 정보를 불러오는 중입니다.</div>
+      </div>
+
+      <div class="pagination">
+        <button id="prevBtn" disabled>이전</button>
+        <span id="pageInfo">1 페이지</span>
+        <button id="nextBtn">다음</button>
+      </div>
+    </div>
+
+  </section>
+
+  <div class="notice">
+    ※ 충전소 정보는 한국환경공단 전기자동차 충전소 OpenAPI를 통해 제공됩니다.
+    충전기 상태는 실시간으로 변경될 수 있으므로 실제 이용 전 운영기관에 확인해 주세요.
+    추천 점수는 EV Mate 자체 기준으로 계산한 참고 정보입니다.
+  </div>
+
+</main>
+
+<footer>
+  <strong>EV Mate</strong> | 전기차 충전소 스마트 추천 플랫폼<br>
+  공공데이터포털 한국환경공단 전기자동차 충전소 정보 활용
+</footer>
+
+<!-- 충전소 상세 모달 -->
+<div class="modal" id="detailModal">
+  <div class="modal-content">
+    <button class="modal-close" id="modalClose">×</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  // ==========================================
+  // 1. 기본 설정
+  // ==========================================
+
+  const API_URL =
+    'https://script.google.com/macros/s/AKfycbxRP1oyRDRPs_3dq8WtpOS3I9DaBeZ49gldxT_noYpUn8yBSyuUAtDds1uXomA36TCZ/exec';
+
+  const ROWS = 100;
+
+  const REGION_NAMES = {
+    '11': '서울특별시',
+    '26': '부산광역시',
+    '27': '대구광역시',
+    '28': '인천광역시',
+    '29': '광주광역시',
+    '30': '대전광역시',
+    '31': '울산광역시',
+    '36': '세종특별자치시',
+    '41': '경기도',
+    '42': '강원특별자치도',
+    '43': '충청북도',
+    '44': '충청남도',
+    '45': '전북특별자치도',
+    '46': '전라남도',
+    '47': '경상북도',
+    '48': '경상남도',
+    '50': '제주특별자치도'
+  };
+
+  let stations = [];
+  let filteredStations = [];
+  let currentPage = 1;
+  let totalPages = 1;
+  let currentStatus = 'all';
+
+  let userLocation = null;
+  let markers = [];
+  let currentStation = null;
+
+  // ==========================================
+  // 2. 지도 초기화
+  // ==========================================
+
+  const map = L.map('map').setView([37.5665, 126.9780], 11);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  const markerLayer = L.layerGroup().addTo(map);
+
+  // ==========================================
+  // 3. API 데이터 가져오기
+  // ==========================================
+
+  async function loadStations() {
+    const region = document.getElementById('regionSelect').value;
+
+    currentPage = 1;
+
+    document.getElementById('regionLabel').textContent =
+      REGION_NAMES[region];
+
+    document.getElementById('stationList').innerHTML =
+      '<div class="loading">충전소 데이터를 불러오는 중입니다...</div>';
+
+    document.getElementById('recommendations').innerHTML =
+      '<div class="loading">추천 충전소를 계산하고 있습니다...</div>';
+
+    try {
+      const params = new URLSearchParams({
+        zcode: region,
+        pageNo: currentPage,
+        numOfRows: ROWS
+      });
+
+      const response = await fetch(API_URL + '?' + params.toString());
+
+      if (!response.ok) {
+        throw new Error('HTTP 오류: ' + response.status);
+      }
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'API 요청에 실패했습니다.');
+      }
+
+      stations = Array.isArray(data.stations) ? data.stations : [];
+
+      totalPages = Math.max(
+        1,
+        Math.ceil(Number(data.totalCount || 0) / ROWS)
+      );
+
+      document.getElementById('totalCount').textContent =
+        Number(data.totalCount || 0).toLocaleString();
+
+      renderAll();
+
+    } catch (error) {
+      console.error(error);
+
+      document.getElementById('stationList').innerHTML = `
+        <div class="empty">
+          <strong>데이터를 불러오지 못했습니다.</strong>
+          <p>${escapeHTML(error.message)}</p>
+          <p>GAS 배포 상태와 브라우저의 연결 오류를 확인해 주세요.</p>
+          <button class="search-btn" onclick="loadStations()">다시 시도</button>
+        </div>
+      `;
+
+      document.getElementById('recommendations').innerHTML =
+        '<div class="empty">추천 데이터를 표시할 수 없습니다.</div>';
+    }
+  }
+
+  // ==========================================
+  // 4. 페이지 이동
+  // ==========================================
+
+  async function loadPage(page) {
+    if (page < 1 || page > totalPages) return;
+
+    currentPage = page;
+
+    const region = document.getElementById('regionSelect').value;
+
+    document.getElementById('stationList').innerHTML =
+      '<div class="loading">다음 데이터를 불러오는 중입니다...</div>';
+
+    try {
+      const params = new URLSearchParams({
+        zcode: region,
+        pageNo: currentPage,
+        numOfRows: ROWS
+      });
+
+      const response = await fetch(API_URL + '?' + params.toString());
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || '데이터 요청 실패');
+      }
+
+      stations = data.stations || [];
+      renderAll();
+
+    } catch (error) {
+      console.error(error);
+      document.getElementById('stationList').innerHTML =
+        '<div class="empty">페이지를 불러오지 못했습니다.</div>';
+    }
+  }
+
+  // ==========================================
+  // 5. 전체 화면 렌더링
+  // ==========================================
+
+  function renderAll() {
+    applyFilters();
+    renderStats();
+    renderRecommendations();
+    renderStationList();
+    renderMap();
+    renderPagination();
+  }
+
+  // ==========================================
+  // 6. 검색 및 필터
+  // ==========================================
+
+  function applyFilters() {
+    const keyword = document.getElementById('searchInput')
+      .value.trim().toLowerCase();
+
+    const type = document.getElementById('typeFilter').value;
+    const parking = document.getElementById('parkingFilter').value;
+
+    filteredStations = stations.filter(station => {
+      const name = String(station.statNm || '').toLowerCase();
+      const address = String(station.addr || '').toLowerCase();
+
+      const matchesKeyword =
+        !keyword || name.includes(keyword) || address.includes(keyword);
+
+      const matchesType =
+        type === 'all' || station.chgerType === type;
+
+      const matchesParking =
+        parking === 'all' || station.parkingFree === parking;
+
+      let matchesStatus = true;
+
+      if (currentStatus === 'other') {
+        matchesStatus = !['2', '3'].includes(String(station.stat));
+      } else if (currentStatus !== 'all') {
+        matchesStatus = String(station.stat) === currentStatus;
+      }
+
+      return matchesKeyword && matchesType &&
+        matchesParking && matchesStatus;
+    });
+  }
+
+  // ==========================================
+  // 7. 통계 계산
+  // ==========================================
+
+  function renderStats() {
+    const available = stations.filter(s => String(s.stat) === '2').length;
+    const charging = stations.filter(s => String(s.stat) === '3').length;
+    const free = stations.filter(s => s.parkingFree === 'Y').length;
+
+    document.getElementById('availableCount').textContent = available;
+    document.getElementById('chargingCount').textContent = charging;
+    document.getElementById('freeCount').textContent = free;
+  }
+
+  // ==========================================
+  // 8. 거리 계산
+  // ==========================================
+
+  function getDistance(lat1, lng1, lat2, lng2) {
+    const R = 6371;
+    const toRad = value => value * Math.PI / 180;
+
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLng / 2) ** 2;
+
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  // ==========================================
+  // 9. 추천 점수 계산
+  // ==========================================
+
+  function getRecommendation(station) {
+    let score = 0;
+    const reasons = [];
+
+    // 충전 상태: 40점
+    if (String(station.stat) === '2') {
+      score += 40;
+      reasons.push('현재 충전 가능');
+    } else if (String(station.stat) === '3') {
+      score += 12;
+      reasons.push('현재 충전 중');
+    }
+
+    // 거리: 25점
+    if (
+      userLocation &&
+      Number.isFinite(Number(station.lat)) &&
+      Number.isFinite(Number(station.lng))
+    ) {
+      const distance = getDistance(
+        userLocation.lat,
+        userLocation.lng,
+        Number(station.lat),
+        Number(station.lng)
+      );
+
+      if (distance <= 1) score += 25;
+      else if (distance <= 3) score += 21;
+      else if (distance <= 5) score += 17;
+      else if (distance <= 10) score += 12;
+      else if (distance <= 20) score += 7;
+
+      station.distance = distance;
+      reasons.push('현재 위치에서 ' + distance.toFixed(1) + 'km');
+    } else {
+      // 위치를 제공하지 않은 경우 거리 항목은 중립 점수
+      score += 12;
+      reasons.push('거리 정보 미적용');
+    }
+
+    // 출력: 15점
+    const output = Number(station.output) || 0;
+
+    if (output >= 100) score += 15;
+    else if (output >= 50) score += 12;
+    else if (output >= 30) score += 9;
+    else if (output > 0) score += 5;
+
+    if (output > 0) {
+      reasons.push(output + 'kW 출력');
+    }
+
+    // 무료 주차: 10점
+    if (station.parkingFree === 'Y') {
+      score += 10;
+      reasons.push('무료 주차');
+    }
+
+    // 이용 제한: 10점
+    if (station.limitYn === 'N') {
+      score += 10;
+      reasons.push('이용 제한 없음');
+    }
+
+    return {
+      score: Math.min(100, score),
+      reasons
+    };
+  }
+
+  // ==========================================
+  // 10. 추천 충전소 표시
+  // ==========================================
+
+  function renderRecommendations() {
+    const available = filteredStations
+      .filter(s => String(s.stat) === '2')
+      .map(s => ({
+        station: s,
+        result: getRecommendation(s)
+      }))
+      .sort((a, b) => b.result.score - a.result.score)
+      .slice(0, 3);
+
+    const container = document.getElementById('recommendations');
+
+    if (!available.length) {
+      container.innerHTML =
+        '<div class="empty">현재 조건에 맞는 충전 가능 충전소가 없습니다.</div>';
+      return;
+    }
+
+    container.innerHTML = available.map((item, index) => {
+      const s = item.station;
+
+      return `
+        <article class="recommend-card"
+          onclick="showDetail('${escapeJS(s.statId)}','${escapeJS(s.chgerId)}')">
+
+          <div class="recommend-top">
+            <span class="recommend-label">추천 ${index + 1}순위</span>
+            <span class="score">${item.result.score}점</span>
+          </div>
+
+          <h3>${escapeHTML(s.statNm)}</h3>
+          <p>${escapeHTML(s.addr)}</p>
+          <p>${escapeHTML(s.chgerTypeName || '충전기 정보 없음')}</p>
+          <p class="reason">${item.result.reasons.join(' · ')}</p>
+        </article>
+      `;
+    }).join('');
+  }
+
+  // ==========================================
+  // 11. 충전소 목록 표시
+  // ==========================================
+
+  function getStatusInfo(status) {
+    const value = String(status);
+
+    const map = {
+      '1': ['통신 이상', 'unavailable'],
+      '2': ['충전 가능', 'available'],
+      '3': ['충전 중', 'charging'],
+      '4': ['운영 중지', 'unavailable'],
+      '5': ['점검 중', 'unavailable'],
+      '9': ['상태 미확인', 'unavailable']
+    };
+
+    return map[value] || ['상태 미확인', 'unavailable'];
+  }
+
+  function renderStationList() {
+    const container = document.getElementById('stationList');
+
+    document.getElementById('listCount').textContent =
+      '현재 페이지 ' + filteredStations.length + '개 표시';
+
+    if (!filteredStations.length) {
+      container.innerHTML =
+        '<div class="empty">검색 조건에 맞는 충전소가 없습니다.</div>';
+      return;
+    }
+
+    container.innerHTML = filteredStations.map(s => {
+      const status = getStatusInfo(s.stat);
+      const saved = isFavorite(s);
+
+      return `
+        <article class="station-card"
+          onclick="showDetail('${escapeJS(s.statId)}','${escapeJS(s.chgerId)}')">
+
+          <div class="station-heading">
+            <div>
+              <h3>${escapeHTML(s.statNm || '이름 없음')}</h3>
+              <div class="station-address">
+                ${escapeHTML(s.addr || '주소 정보 없음')}
+              </div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span class="status ${status[1]}">${status[0]}</span>
+              <button class="favorite-btn ${saved ? 'saved' : ''}"
+                onclick="event.stopPropagation();toggleFavorite('${escapeJS(s.statId)}','${escapeJS(s.chgerId)}')">
+                ${saved ? '★' : '☆'}
+              </button>
+            </div>
+          </div>
+
+          <div class="station-meta">
+            <span class="meta-tag">${escapeHTML(s.chgerTypeName || '충전기 정보 없음')}</span>
+            <span class="meta-tag">${s.output ? escapeHTML(s.output) + 'kW' : '출력 정보 없음'}</span>
+            <span class="meta-tag">${s.parkingFree === 'Y' ? '무료 주차' : '유료/확인 필요'}</span>
+            <span class="meta-tag">충전기 ${escapeHTML(s.chgerId || '-')}</span>
+          </div>
+        </article>
+      `;
+    }).join('');
+  }
+
+  // ==========================================
+  // 12. 지도 마커 표시
+  // ==========================================
+
+  function renderMap() {
+    markerLayer.clearLayers();
+
+    filteredStations.forEach(s => {
+      const lat = Number(s.lat);
+      const lng = Number(s.lng);
+
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+      const status = getStatusInfo(s.stat);
+
+      const marker = L.marker([lat, lng]);
+
+      marker.bindPopup(`
+        <strong>${escapeHTML(s.statNm)}</strong><br>
+        ${status[0]}<br>
+        ${escapeHTML(s.chgerTypeName || '')}<br>
+        ${s.output ? escapeHTML(s.output) + 'kW' : ''}
+        <br><br>
+        <button onclick="showDetail('${escapeJS(s.statId)}','${escapeJS(s.chgerId)}')">
+          상세 정보
+        </button>
+      `);
+
+      marker.addTo(markerLayer);
+    });
+
+    const points = filteredStations
+      .filter(s => Number.isFinite(Number(s.lat)) &&
+                   Number.isFinite(Number(s.lng)));
+
+    if (points.length) {
+      const bounds = L.latLngBounds(
+        points.map(s => [Number(s.lat), Number(s.lng)])
+      );
+
+      map.fitBounds(bounds, { padding: [25, 25], maxZoom: 13 });
+    }
+  }
+
+  // ==========================================
+  // 13. 충전소 상세 정보
+  // ==========================================
+
+  function showDetail(statId, chgerId) {
+    const station = stations.find(s =>
+      String(s.statId) === String(statId) &&
+      String(s.chgerId) === String(chgerId)
+    );
+
+    if (!station) return;
+
+    currentStation = station;
+
+    const status = getStatusInfo(station.stat);
+    const recommendation = getRecommendation(station);
+
+    document.getElementById('modalBody').innerHTML = `
+      <h2>${escapeHTML(station.statNm)}</h2>
+      <div class="modal-address">${escapeHTML(station.addr)}</div>
+
+      <div class="detail-row">
+        <span>현재 상태</span>
+        <strong>${status[0]}</strong>
+      </div>
+
+      <div class="detail-row">
+        <span>충전기 번호</span>
+        <strong>${escapeHTML(station.chgerId || '-')}</strong>
+      </div>
+
+      <div class="detail-row">
+        <span>충전기 종류</span>
+        <strong>${escapeHTML(station.chgerTypeName || '-')}</strong>
+      </div>
+
+      <div class="detail-row">
+        <span>충전 출력</span>
+        <strong>${station.output ? escapeHTML(station.output) + 'kW' : '-'}</strong>
+      </div>
+
+      <div class="detail-row">
+        <span>주차 요금</span>
+        <strong>${station.parkingFree === 'Y' ? '무료' : '무료 여부 확인 필요'}</strong>
+      </div>
+
+      <div class="detail-row">
+        <span>이용 시간</span>
+        <strong>${escapeHTML(station.useTime || '-')}</strong>
+      </div>
+
+      <div class="detail-row">
+        <span>운영 기관</span>
+        <strong>${escapeHTML(station.busiNm || '-')}</strong>
+      </div>
+
+      <div class="detail-row">
+        <span>문의 전화</span>
+        <strong>${escapeHTML(station.busiCall || '-')}</strong>
+      </div>
+
+      <div class="detail-row">
+        <span>이용 제한</span>
+        <strong>${station.limitYn === 'N' ? '없음' : '제한 여부 확인 필요'}</strong>
+      </div>
+
+      <div class="detail-row">
+        <span>추천 점수</span>
+        <strong style="color:var(--green-dark);">${recommendation.score}점</strong>
+      </div>
+
+      <div class="detail-row">
+        <span>추천 이유</span>
+        <strong>${recommendation.reasons.join(', ')}</strong>
+      </div>
+
+      <div class="modal-actions">
+        <button class="modal-favorite" onclick="toggleCurrentFavorite()">
+          ★ 즐겨찾기
+        </button>
+        <button class="modal-map" onclick="moveToStation()">
+          지도에서 보기
+        </button>
+      </div>
+    `;
+
+    document.getElementById('detailModal').classList.add('show');
+  }
+
+  function moveToStation() {
+    if (!currentStation) return;
+
+    const s = currentStation;
+
+    document.getElementById('detailModal').classList.remove('show');
+
+    map.setView([Number(s.lat), Number(s.lng)], 16);
+
+    markerLayer.eachLayer(marker => {
+      const position = marker.getLatLng();
+
+      if (
+        Math.abs(position.lat - Number(s.lat)) < 0.00001 &&
+        Math.abs(position.lng - Number(s.lng)) < 0.00001
+      ) {
+        marker.openPopup();
+      }
+    });
+  }
+
+  // ==========================================
+  // 14. 즐겨찾기 (localStorage)
+  // ==========================================
+
+  function getFavorites() {
+    try {
+      return JSON.parse(localStorage.getItem('evMateFavorites') || '[]');
+    } catch {
+      return [];
+    }
+  }
+
+  function isFavorite(station) {
+    return getFavorites().some(f =>
+      f.statId === station.statId &&
+      f.chgerId === station.chgerId
+    );
+  }
+
+  function toggleFavorite(statId, chgerId) {
+    const station = stations.find(s =>
+      String(s.statId) === String(statId) &&
+      String(s.chgerId) === String(chgerId)
+    );
+
+    if (!station) return;
+
+    let favorites = getFavorites();
+
+    const index = favorites.findIndex(f =>
+      f.statId === station.statId &&
+      f.chgerId === station.chgerId
+    );
+
+    if (index >= 0) {
+      favorites.splice(index, 1);
+    } else {
+      favorites.push(station);
+    }
+
+    localStorage.setItem('evMateFavorites', JSON.stringify(favorites));
+
+    renderStationList();
+  }
+
+  function toggleCurrentFavorite() {
+    if (!currentStation) return;
+
+    toggleFavorite(currentStation.statId, currentStation.chgerId);
+
+    const button = document.querySelector('.modal-favorite');
+
+    if (button) {
+      button.textContent = isFavorite(currentStation)
+        ? '★ 즐겨찾기 저장됨'
+        : '☆ 즐겨찾기 해제';
+    }
+  }
+
+  // ==========================================
+  // 15. 현재 위치 가져오기
+  // ==========================================
+
+  function useCurrentLocation() {
+    if (!navigator.geolocation) {
+      alert('현재 위치 기능을 지원하지 않는 브라우저입니다.');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        userLocation = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+
+        L.circleMarker(
+          [userLocation.lat, userLocation.lng],
+          {
+            radius: 8,
+            color: '#ffffff',
+            weight: 3,
+            fillColor: '#4285db',
+            fillOpacity: 1
+          }
+        ).addTo(map).bindPopup('현재 내 위치');
+
+        map.setView(
+          [userLocation.lat, userLocation.lng],
+          13
+        );
+
+        renderAll();
+
+        alert('현재 위치를 기준으로 추천 점수를 다시 계산했습니다.');
+      },
+      error => {
+        alert('위치를 가져오지 못했습니다. 브라우저 위치 권한을 확인해 주세요.');
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000
+      }
+    );
+  }
+
+  // ==========================================
+  // 16. 페이지 번호 표시
+  // ==========================================
+
+  function renderPagination() {
+    document.getElementById('pageInfo').textContent =
+      currentPage + ' / ' + totalPages + ' 페이지';
+
+    document.getElementById('prevBtn').disabled =
+      currentPage <= 1;
+
+    document.getElementById('nextBtn').disabled =
+      currentPage >= totalPages;
+  }
+
+  // ==========================================
+  // 17. HTML 출력 안전 처리
+  // ==========================================
+
+  function escapeHTML(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    })[char]);
+  }
+
+  function escapeJS(value) {
+    return String(value ?? '')
+      .replace(/\\/g, '\\\\')
+      .replace(/'/g, "\\'")
+      .replace(/"/g, '\\"')
+      .replace(/</g, '\\x3c')
+      .replace(/>/g, '\\x3e')
+      .replace(/\n/g, '\\n')
+      .replace(/\r/g, '\\r');
+  }
+
+  // ==========================================
+  // 18. 이벤트 연결
+  // ==========================================
+
+  document.getElementById('searchBtn')
+    .addEventListener('click', () => {
+      applyFilters();
+      renderAll();
+    });
+
+  document.getElementById('searchInput')
+    .addEventListener('keydown', event => {
+      if (event.key === 'Enter') {
+        applyFilters();
+        renderAll();
+      }
+    });
+
+  document.getElementById('regionSelect')
+    .addEventListener('change', loadStations);
+
+  document.getElementById('locationBtn')
+    .addEventListener('click', useCurrentLocation);
+
+  document.getElementById('typeFilter')
+    .addEventListener('change', () => {
+      applyFilters();
+      renderAll();
+    });
+
+  document.getElementById('parkingFilter')
+    .addEventListener('change', () => {
+      applyFilters();
+      renderAll();
+    });
+
+  document.querySelectorAll('.filter-chip').forEach(button => {
+    button.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip')
+        .forEach(b => b.classList.remove('active'));
+
+      button.classList.add('active');
+      currentStatus = button.dataset.status;
+
+      applyFilters();
+      renderAll();
+    });
+  });
+
+  document.getElementById('prevBtn')
+    .addEventListener('click', () => loadPage(currentPage - 1));
+
+  document.getElementById('nextBtn')
+    .addEventListener('click', () => loadPage(currentPage + 1));
+
+  document.getElementById('modalClose')
+    .addEventListener('click', () => {
+      document.getElementById('detailModal').classList.remove('show');
+    });
+
+  document.getElementById('detailModal')
+    .addEventListener('click', event => {
+      if (event.target.id === 'detailModal') {
+        event.target.classList.remove('show');
+      }
+    });
+
+  // ==========================================
+  // 19. 최초 실행
+  // ==========================================
+
+  loadStations();
+
+</script>
+
+</body>
+</html>
