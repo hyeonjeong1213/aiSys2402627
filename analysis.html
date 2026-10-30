@@ -1,0 +1,570 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EV Mate | 충전소 분석</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, "Noto Sans KR", sans-serif;
+      background: #f4f7f8;
+      color: #1d2939;
+    }
+
+    header {
+      height: 66px;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 max(calc((100% - 1170px) / 2), 24px);
+      border-bottom: 1px solid #edf0f2;
+    }
+
+    .logo {
+      color: #07834e;
+      font-size: 23px;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    nav { display: flex; gap: 28px; }
+
+    nav a {
+      color: #667085;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    nav a.active, nav a:hover { color: #07834e; }
+
+    .hero {
+      background: linear-gradient(110deg, #103a3b, #087653);
+      color: white;
+      padding: 48px 24px;
+    }
+
+    .hero-inner, main {
+      max-width: 1170px;
+      margin: auto;
+    }
+
+    .hero h1 { font-size: 32px; margin: 0 0 12px; }
+    .hero p { color: #d1eee4; margin: 0; }
+
+    main { padding: 30px 24px 60px; }
+
+    .notice {
+      background: #e8f7f0;
+      border: 1px solid #ccebdc;
+      border-radius: 12px;
+      padding: 15px 18px;
+      color: #08784d;
+      font-size: 14px;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 26px;
+    }
+
+    .stat-card, .chart-card, .table-card {
+      background: white;
+      border: 1px solid #e9eef1;
+      border-radius: 15px;
+      padding: 22px;
+    }
+
+    .stat-label { color: #82909f; font-size: 14px; font-weight: 600; }
+    .stat-value { font-size: 29px; font-weight: 800; margin-top: 12px; }
+    .green { color: #0b9b65; }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin: 34px 0 16px;
+    }
+
+    .charts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .chart-card h3 {
+      margin: 0 0 20px;
+      font-size: 16px;
+    }
+
+    .chart-wrap {
+      position: relative;
+      height: 300px;
+    }
+
+    .wide { grid-column: 1 / -1; }
+
+    .table-card { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    th, td {
+      padding: 14px 10px;
+      border-bottom: 1px solid #edf0f2;
+    }
+
+    th { color: #758394; background: #f8fafb; }
+    td:first-child { font-weight: 700; }
+
+    .status {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 20px;
+      background: #e8f7f0;
+      color: #07834e;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 50px 15px;
+      color: #758394;
+      background: white;
+      border-radius: 15px;
+    }
+
+    .error {
+      color: #b42318;
+      background: #fff1f0;
+      padding: 16px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .footnote {
+      color: #8793a1;
+      font-size: 12px;
+      line-height: 1.7;
+      margin-top: 14px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 25px;
+      color: #98a2b3;
+      font-size: 13px;
+    }
+
+    @media(max-width: 750px) {
+      header { padding: 0 16px; }
+      nav { gap: 12px; }
+      nav a { font-size: 12px; }
+      .hero h1 { font-size: 25px; }
+      .stats { grid-template-columns: 1fr; }
+      .charts { grid-template-columns: 1fr; }
+      .wide { grid-column: auto; }
+      .chart-wrap { height: 260px; }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <a class="logo" href="index.html">⚡ EV Mate</a>
+  <nav>
+    <a href="index.html">충전소 찾기</a>
+    <a href="analysis.html" class="active">충전소 분석</a>
+    <a href="favorites.html">즐겨찾기</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <h1>전국 전기차 충전소 분석</h1>
+    <p>전국 충전 인프라 현황을 데이터로 한눈에 확인하세요.</p>
+  </div>
+</section>
+
+<main>
+  <div class="notice" id="loadingMessage">
+    전국 17개 시·도의 충전소 데이터를 불러오고 있습니다.
+    잠시만 기다려 주세요.
+  </div>
+
+  <div class="error" id="errorMessage"></div>
+
+  <section class="stats">
+    <div class="stat-card">
+      <div class="stat-label">전국 등록 충전기 수</div>
+      <div class="stat-value" id="totalCount">-</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">분석에 사용한 충전기 데이터</div>
+      <div class="stat-value green" id="sampleCount">-</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">데이터 조회 지역</div>
+      <div class="stat-value" id="regionCount">-</div>
+    </div>
+  </section>
+
+  <h2 class="section-title">📊 전국 충전소 통계</h2>
+
+  <section class="charts">
+    <div class="chart-card wide">
+      <h3>지역별 충전기 수 TOP 5</h3>
+      <div class="chart-wrap">
+        <canvas id="regionChart"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <h3>충전기 상태별 비율</h3>
+      <div class="chart-wrap">
+        <canvas id="statusChart"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <h3>충전기 종류별 비율</h3>
+      <div class="chart-wrap">
+        <canvas id="typeChart"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <h2 class="section-title">📍 지역별 충전기 현황</h2>
+
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>지역</th>
+          <th>전체 충전기 수</th>
+          <th>조회한 데이터</th>
+          <th>조회 상태</th>
+        </tr>
+      </thead>
+      <tbody id="regionTable">
+        <tr><td colspan="4">데이터를 불러오는 중입니다.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="footnote">
+    ※ 지역별 전체 충전기 수는 API의 totalCount를 기준으로 합니다.
+    상태별·종류별 통계는 각 지역에서 조회한 최대 100건의 데이터를 기준으로 계산합니다.
+    따라서 전체 충전기의 실제 상태별 비율과는 차이가 있을 수 있습니다.
+  </p>
+</main>
+
+<footer>© 2026 EV Mate. Smart EV Charging Platform.</footer>
+
+<script>
+  const API_URL =
+    "https://script.google.com/macros/s/AKfycbxRP1oyRDRPs_3dq8WtpOS3I9DaBeZ49gldxT_noYpUn8yBSyuUAtDds1uXomA36TCZ/exec";
+
+  const REGIONS = [
+    "서울", "부산", "대구", "인천", "광주", "대전",
+    "울산", "세종", "경기", "강원", "충북", "충남",
+    "전북", "전남", "경북", "경남", "제주"
+  ];
+
+  const ROWS = 100;
+
+  let regionChart = null;
+  let statusChart = null;
+  let typeChart = null;
+
+  const numberFormat = value =>
+    Number(value || 0).toLocaleString("ko-KR");
+
+  function showError(message) {
+    const el = document.getElementById("errorMessage");
+    el.style.display = "block";
+    el.textContent = message;
+  }
+
+  async function fetchRegion(region) {
+    const url = API_URL +
+      "?region=" + encodeURIComponent(region) +
+      "&pageNo=1&numOfRows=" + ROWS;
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(region + " 데이터 요청 실패");
+    }
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(region + " 데이터 조회 실패");
+    }
+
+    return {
+      region,
+      totalCount: Number(data.totalCount || 0),
+      stations: Array.isArray(data.stations) ? data.stations : []
+    };
+  }
+
+  // 한 번에 너무 많은 요청을 보내지 않도록 3개씩 조회
+  async function fetchAllRegions() {
+    const results = [];
+
+    for (let i = 0; i < REGIONS.length; i += 3) {
+      const group = REGIONS.slice(i, i + 3);
+
+      const groupResults = await Promise.all(
+        group.map(async region => {
+          try {
+            return await fetchRegion(region);
+          } catch (error) {
+            console.error(error);
+            return {
+              region,
+              totalCount: 0,
+              stations: [],
+              failed: true
+            };
+          }
+        })
+      );
+
+      results.push(...groupResults);
+    }
+
+    return results;
+  }
+
+  function getStatusName(station) {
+    if (station.statusName) return station.statusName;
+
+    const names = {
+      "1": "통신 이상",
+      "2": "충전 가능",
+      "3": "충전 중",
+      "4": "운영 중지",
+      "5": "점검 중",
+      "9": "상태 미확인"
+    };
+
+    return names[String(station.stat)] || "기타";
+  }
+
+  function getTypeName(station) {
+    return station.chgerTypeName ||
+      station.chgerType ||
+      "기타";
+  }
+
+  function drawCharts(results) {
+    const successful = results.filter(item => !item.failed);
+    const allStations = successful.flatMap(item => item.stations);
+
+    const total = successful.reduce(
+      (sum, item) => sum + item.totalCount, 0
+    );
+
+    document.getElementById("totalCount").textContent =
+      numberFormat(total);
+
+    document.getElementById("sampleCount").textContent =
+      numberFormat(allStations.length);
+
+    document.getElementById("regionCount").textContent =
+      successful.length + " / 17";
+
+    // 지역별 전체 충전기 수 TOP 5
+    const topRegions = [...successful]
+      .sort((a, b) => b.totalCount - a.totalCount)
+      .slice(0, 5);
+
+    if (regionChart) regionChart.destroy();
+
+    regionChart = new Chart(
+      document.getElementById("regionChart"),
+      {
+        type: "bar",
+        data: {
+          labels: topRegions.map(item => item.region),
+          datasets: [{
+            label: "충전기 수",
+            data: topRegions.map(item => item.totalCount),
+            backgroundColor: "#13a36f",
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: value => numberFormat(value)
+              }
+            }
+          }
+        }
+      }
+    );
+
+    // 충전기 상태별 집계
+    const statusCounts = {};
+
+    allStations.forEach(station => {
+      const name = getStatusName(station);
+      statusCounts[name] = (statusCounts[name] || 0) + 1;
+    });
+
+    if (statusChart) statusChart.destroy();
+
+    statusChart = new Chart(
+      document.getElementById("statusChart"),
+      {
+        type: "doughnut",
+        data: {
+          labels: Object.keys(statusCounts),
+          datasets: [{
+            data: Object.values(statusCounts),
+            backgroundColor: [
+              "#13a36f", "#f0a43c", "#4789db",
+              "#e36c6c", "#9473d2", "#9aa5b1",
+              "#4db6ac"
+            ],
+            borderWidth: 2,
+            borderColor: "#ffffff"
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: "bottom" }
+          }
+        }
+      }
+    );
+
+    // 충전기 종류별 집계
+    const typeCounts = {};
+
+    allStations.forEach(station => {
+      const name = getTypeName(station);
+      typeCounts[name] = (typeCounts[name] || 0) + 1;
+    });
+
+    const typeEntries = Object.entries(typeCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8);
+
+    if (typeChart) typeChart.destroy();
+
+    typeChart = new Chart(
+      document.getElementById("typeChart"),
+      {
+        type: "doughnut",
+        data: {
+          labels: typeEntries.map(item => item[0]),
+          datasets: [{
+            data: typeEntries.map(item => item[1]),
+            backgroundColor: [
+              "#13a36f", "#4789db", "#f0a43c",
+              "#9473d2", "#e36c6c", "#4db6ac",
+              "#78909c", "#b0bec5"
+            ],
+            borderWidth: 2,
+            borderColor: "#ffffff"
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: "bottom" }
+          }
+        }
+      }
+    );
+
+    renderTable(results);
+  }
+
+  function renderTable(results) {
+    const tbody = document.getElementById("regionTable");
+
+    tbody.innerHTML = results.map(item => `
+      <tr>
+        <td>${item.region}</td>
+        <td>${item.failed ? "-" : numberFormat(item.totalCount)}</td>
+        <td>${item.failed ? "-" : numberFormat(item.stations.length)}</td>
+        <td>
+          <span class="status"
+            style="${item.failed ? 'background:#fff1f0;color:#b42318' : ''}">
+            ${item.failed ? "조회 실패" : "조회 완료"}
+          </span>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  async function init() {
+    try {
+      const results = await fetchAllRegions();
+
+      const successful = results.filter(item => !item.failed);
+
+      if (successful.length === 0) {
+        throw new Error("충전소 데이터를 불러오지 못했습니다.");
+      }
+
+      drawCharts(results);
+
+      document.getElementById("loadingMessage").textContent =
+        "분석 데이터 조회가 완료되었습니다. 상태·종류 통계는 조회된 데이터 기준입니다.";
+
+      if (successful.length < REGIONS.length) {
+        showError(
+          "일부 지역의 데이터를 불러오지 못했습니다. 잠시 후 새로고침해 주세요."
+        );
+      }
+
+    } catch (error) {
+      console.error(error);
+      document.getElementById("loadingMessage").textContent =
+        "데이터를 불러오지 못했습니다.";
+      showError(error.message);
+    }
+  }
+
+  init();
+</script>
+
+</body>
+</html>
