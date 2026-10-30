@@ -367,7 +367,7 @@
           } catch (error) {
             console.error(error);
             return {
-              region,
+              region: region.name,
               totalCount: 0,
               stations: [],
               failed: true
