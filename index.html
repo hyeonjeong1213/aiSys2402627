@@ -1350,7 +1350,11 @@
   // 13. 충전소 상세 정보
   // ==========================================
 
-  function showDetail(statId, chgerId) {
+  // ==========================================
+// 13. 충전소 상세 정보 페이지 이동
+// ==========================================
+
+function showDetail(statId, chgerId) {
   const station = stations.find(item =>
     String(item.statId) === String(statId) &&
     String(item.chgerId) === String(chgerId)
@@ -1361,92 +1365,15 @@
     return;
   }
 
+  // 선택한 충전소 정보를 상세 페이지로 전달
   localStorage.setItem(
     "evMateSelectedStation",
     JSON.stringify(station)
   );
 
+  // 상세 페이지로 이동
   window.location.href = "detail.html";
 }
-
-    if (!station) return;
-
-    currentStation = station;
-
-    const status = getStatusInfo(station.stat);
-    const recommendation = getRecommendation(station);
-
-    document.getElementById('modalBody').innerHTML = `
-      <h2>${escapeHTML(station.statNm)}</h2>
-      <div class="modal-address">${escapeHTML(station.addr)}</div>
-
-      <div class="detail-row">
-        <span>현재 상태</span>
-        <strong>${status[0]}</strong>
-      </div>
-
-      <div class="detail-row">
-        <span>충전기 번호</span>
-        <strong>${escapeHTML(station.chgerId || '-')}</strong>
-      </div>
-
-      <div class="detail-row">
-        <span>충전기 종류</span>
-        <strong>${escapeHTML(station.chgerTypeName || '-')}</strong>
-      </div>
-
-      <div class="detail-row">
-        <span>충전 출력</span>
-        <strong>${station.output ? escapeHTML(station.output) + 'kW' : '-'}</strong>
-      </div>
-
-      <div class="detail-row">
-        <span>주차 요금</span>
-        <strong>${station.parkingFree === 'Y' ? '무료' : '무료 여부 확인 필요'}</strong>
-      </div>
-
-      <div class="detail-row">
-        <span>이용 시간</span>
-        <strong>${escapeHTML(station.useTime || '-')}</strong>
-      </div>
-
-      <div class="detail-row">
-        <span>운영 기관</span>
-        <strong>${escapeHTML(station.busiNm || '-')}</strong>
-      </div>
-
-      <div class="detail-row">
-        <span>문의 전화</span>
-        <strong>${escapeHTML(station.busiCall || '-')}</strong>
-      </div>
-
-      <div class="detail-row">
-        <span>이용 제한</span>
-        <strong>${station.limitYn === 'N' ? '없음' : '제한 여부 확인 필요'}</strong>
-      </div>
-
-      <div class="detail-row">
-        <span>추천 점수</span>
-        <strong style="color:var(--green-dark);">${recommendation.score}점</strong>
-      </div>
-
-      <div class="detail-row">
-        <span>추천 이유</span>
-        <strong>${recommendation.reasons.join(', ')}</strong>
-      </div>
-
-      <div class="modal-actions">
-        <button class="modal-favorite" onclick="toggleCurrentFavorite()">
-          ★ 즐겨찾기
-        </button>
-        <button class="modal-map" onclick="moveToStation()">
-          지도에서 보기
-        </button>
-      </div>
-    `;
-
-    document.getElementById('detailModal').classList.add('show');
-  }
 
   function moveToStation() {
     if (!currentStation) return;
