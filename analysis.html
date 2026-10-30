@@ -322,30 +322,30 @@
 
   async function fetchRegion(region) {
   const url = API_URL +
-    "?region=" + encodeURIComponent(region) +
+    "?zcode=" + region.code +
     "&pageNo=1&numOfRows=" + ROWS;
 
   const response = await fetch(url);
 
   if (!response.ok) {
     throw new Error(
-      region + " HTTP 오류: " + response.status
+      region.name + " HTTP 오류: " + response.status
     );
   }
 
   const data = await response.json();
 
-  console.log(region + " API 응답:", data);
+  console.log(region.name + " API 응답:", data);
 
   if (!data.success) {
     throw new Error(
-      region + " 조회 실패: " +
+      region.name + " 조회 실패: " +
       JSON.stringify(data)
     );
   }
 
   return {
-    region,
+    region: region.name,
     totalCount: Number(data.totalCount || 0),
     stations: Array.isArray(data.stations)
       ? data.stations
